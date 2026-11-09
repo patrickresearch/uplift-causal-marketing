@@ -112,3 +112,14 @@ def budget_table(
 
     est, lo, hi = _bootstrap(stat, len(ys), n_boot, alpha, seed)
     return pd.DataFrame({"cost_share": f, "effect_share": est, "lo": lo, "hi": hi})
+
+
+def uplift_band(y, t, score, points=101, n_boot=200, alpha=0.05, seed=0):
+    ys, ts = _sorted(y, t, score)
+    grid = np.linspace(0, 1, points)
+
+    def stat(w):
+        x, u = _uplift(ys, ts, w)
+        return np.r_[0.0, u[np.minimum(np.searchsorted(x, grid[1:]), len(x) - 1)] / w.sum()]
+
+    return grid, *_bootstrap(stat, len(ys), n_boot, alpha, seed)

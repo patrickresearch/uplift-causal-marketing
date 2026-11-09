@@ -9,6 +9,7 @@ from uplift_causal.evaluate_uplift import (
     qini_coefficient,
     qini_curve,
     segments,
+    uplift_band,
 )
 from uplift_causal.simulate_bias import simulate_bias
 
@@ -63,3 +64,11 @@ def test_qini_normalized_bounds(rct):
 def test_segments_rule():
     seg = segments([0.1, 0.3, 0.1, 0.3, 0.3], [0.0, 0.0, 0.05, -0.05, 0.05], 0.2, 0.02)
     assert list(seg) == ["Lost Causes", "Sure Things", "Persuadables", "Sleeping Dogs", "Persuadables"]
+
+
+def test_uplift_band_ends_at_ate(rct):
+    df, tau = rct
+    grid, est, lo, hi = uplift_band(df.y, df.t, tau, n_boot=20)
+    assert est[0] == 0 and grid[-1] == 1
+    assert est[-1] == pytest.approx(diff_means(df.y, df.t)[0])
+    assert (lo <= est).all() and (est <= hi).all()

@@ -5,6 +5,8 @@ Causal inference and uplift modeling on the Hillstrom e-mail experiment (64k cus
 
 ![Naive vs. adjusted vs. true effect](docs/figures/hero.png)
 
+**[Rendered notebooks](https://patrickresearch.github.io/uplift-causal-marketing/)** · **Budget calculator:** `make app`
+
 ## Approach
 
 | Step | Notebook | Method |
@@ -59,6 +61,10 @@ All refuters pass: placebo treatment −0.02 pp, random common cause and data su
 
 ![Segments](docs/figures/segments.png)
 
+## Budget calculator
+
+`app/streamlit_app.py` turns held-out uplift scores into a profit curve: set customer base, cost per contact, value per incremental visit and budget; it returns the optimal target share, expected incremental visits and profit with 95 % bootstrap bands. Scores are exported by notebooks 03/04 to `app/scores_*.parquet`, so the app needs no model training and only light dependencies (`app/requirements.txt`).
+
 ## Setup
 
 ```bash
@@ -80,6 +86,7 @@ src/uplift_causal/
   learners.py         meta-learners, causal forest
   evaluate_uplift.py  Qini/uplift curves, segments, budget table
   plots.py
+app/                  Streamlit budget calculator + exported scores
 notebooks/            thin: call src, show results
 docs/                 rendered notebooks + figures
 ```

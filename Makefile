@@ -1,4 +1,4 @@
-.PHONY: setup test lint docs
+.PHONY: setup test lint docs app
 
 setup:
 	uv sync
@@ -12,3 +12,6 @@ lint:
 
 docs:
 	uv run jupyter nbconvert --to html --execute --ExecutePreprocessor.timeout=-1 notebooks/*.ipynb --output-dir docs
+
+app:
+	uv run streamlit run app/streamlit_app.py
