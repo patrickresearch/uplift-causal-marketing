@@ -56,8 +56,8 @@ def estimate_plot(summary, truth, title="Naive vs. adjusted vs. true effect"):
 
 def dag_plot(confounders, covariates, treatment="E-Mail", outcome="Visit"):
     pos = {treatment: (0, 0), outcome: (2, 0)}
-    pos |= {c: (x, 1) for c, x in zip(confounders, np.linspace(0.4, 1.6, len(confounders)))}
-    pos |= {c: (x, -1) for c, x in zip(covariates, np.linspace(1.4, 2.6, len(covariates)))}
+    pos |= {c: (x, 1) for c, x in zip(confounders, np.linspace(0.4, 1.6, len(confounders)), strict=True)}
+    pos |= {c: (x, -1) for c, x in zip(covariates, np.linspace(1.4, 2.6, len(covariates)), strict=True)}
     edges = [(treatment, outcome)] + [(c, n) for c in confounders for n in (treatment, outcome)]
     edges += [(c, outcome) for c in covariates]
     fig = go.Figure()
@@ -87,7 +87,7 @@ def dag_plot(confounders, covariates, treatment="E-Mail", outcome="Visit"):
 
 def qini_plot(curves, title="Qini curve"):
     fig = go.Figure()
-    for (name, (x, q)), c in zip(curves.items(), SERIES):
+    for (name, (x, q)), c in zip(curves.items(), SERIES, strict=False):
         step = max(1, len(x) // 1000)
         fig.add_trace(go.Scatter(x=x[::step], y=q[::step], name=name, line=dict(width=2, color=c)))
     x, q = next(iter(curves.values()))
@@ -109,7 +109,7 @@ def quadrant_plot(mu0, tau, seg, threshold, delta, n=5000, seed=0):
     idx = np.random.default_rng(seed).choice(len(mu0), min(n, len(mu0)), replace=False)
     mu0, tau, seg = np.asarray(mu0)[idx], np.asarray(tau)[idx], np.asarray(seg)[idx]
     fig = go.Figure()
-    for s, c, sym in zip(SEGMENTS, SERIES, ["circle", "diamond", "x", "square"]):
+    for s, c, sym in zip(SEGMENTS, SERIES, ["circle", "diamond", "x", "square"], strict=True):
         m = seg == s
         fig.add_trace(
             go.Scattergl(
