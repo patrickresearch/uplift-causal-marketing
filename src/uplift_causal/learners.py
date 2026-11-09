@@ -1,3 +1,4 @@
+import numpy as np
 from econml.dml import CausalForestDML
 from econml.metalearners import TLearner, XLearner
 from lightgbm import LGBMRegressor
@@ -43,4 +44,4 @@ def fit_predict(X_train, t_train, y_train, X_test, seed=0, names=None):
 
 
 def baseline(t_learner, X):
-    return t_learner.models[0].predict(X)
+    return np.clip(t_learner.models[0].predict(X), 0, 1)

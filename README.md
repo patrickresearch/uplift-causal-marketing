@@ -30,7 +30,33 @@ Segments are defined on the estimated effect τ̂(x), not on response levels: *P
 
 ## Results
 
+**Experiment (Hillstrom, women's e-mail → visit).** ATE +4.5 pp (95 % CI 3.9–5.2) on a 10.6 % baseline.
+
+**Observational version.** Confounding on recency and purchase history (standardized mean difference ≈ 1.0) nearly doubles the naive estimate:
+
+| | Estimate | 95 % CI | Bias |
+|---|---|---|---|
+| Naive difference | 8.7 pp | 7.8–9.6 | +4.2 |
+| PS matching | 5.5 pp | 4.2–7.0 | +1.0 |
+| IPW | 5.3 pp | 3.9–6.5 | +0.8 |
+| Double ML | 4.8 pp | 3.6–6.0 | +0.3 |
+
+All refuters pass: placebo treatment −0.02 pp, random common cause and data subsets leave the estimate unchanged.
+
+**Uplift.** Normalized Qini on held-out data:
+
+| | Hillstrom | Criteo (2M) |
+|---|---|---|
+| T-learner | 0.043 (0.015–0.068) | 0.072 (0.060–0.082) |
+| X-learner | 0.043 (0.017–0.068) | 0.076 (0.066–0.087) |
+| Causal Forest | 0.063 (0.040–0.088) | – |
+
 ![Qini](docs/figures/qini.png)
+
+**Targeting.** Contacting only the top 30 % by predicted uplift captures **53 % (43–65 %)** of the incremental visits on Hillstrom and **79 % (71–85 %)** on Criteo, where the effect is far more concentrated (top 10 % → 53 %).
+
+**Segments.** On Hillstrom, 16 % of customers are *Sure Things*: they visit anyway and the e-mail adds nothing measurable (+0.3 pp, CI −2.3 to 2.8). Skipping them saves 16 % of the contact cost at no measurable loss. *Sleeping Dogs* are practically absent (0.02 %): for visits, an e-mail rarely hurts.
+
 ![Segments](docs/figures/segments.png)
 
 ## Setup

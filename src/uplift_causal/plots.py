@@ -23,19 +23,20 @@ def save(fig, name, width=900, height=500):
 
 def estimate_plot(summary, truth, title="Naive vs. adjusted vs. true effect"):
     est, lo, hi = truth
+    colors = [SERIES[1] if i == "Naive" else SERIES[0] for i in summary.index]
     fig = go.Figure(
         go.Scatter(
             x=summary.est,
             y=summary.index,
             mode="markers",
-            marker=dict(size=11, color=SERIES[0], line=dict(width=2, color="white")),
+            marker=dict(size=11, color=colors, line=dict(width=2, color="white")),
             error_x=dict(
                 type="data",
                 array=summary.hi - summary.est,
                 arrayminus=summary.est - summary.lo,
                 thickness=2,
                 width=0,
-                color=SERIES[0],
+                color=MUTED,
             ),
             hovertemplate="%{y}: %{x:.2%}<extra></extra>",
         )
@@ -91,7 +92,7 @@ def qini_plot(curves, title="Qini curve"):
         fig.add_trace(go.Scatter(x=x[::step], y=q[::step], name=name, line=dict(width=2, color=c)))
     x, q = next(iter(curves.values()))
     fig.add_trace(
-        go.Scatter(x=[0, 1], y=[0, q[-1]], name="Random", line=dict(width=2, dash="dash", color=MUTED))
+        go.Scatter(x=[0, 1], y=[0, q[-1]], mode="lines", name="Random", line=dict(width=2, dash="dash", color=MUTED))
     )
     fig.update_layout(
         **LAYOUT,
