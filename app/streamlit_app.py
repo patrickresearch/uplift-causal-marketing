@@ -9,7 +9,7 @@ import streamlit as st
 APP = Path(__file__).resolve().parent
 sys.path.insert(0, str(APP.parent / "src"))
 
-from uplift_causal.evaluate_uplift import uplift_band  # noqa: E402
+from uplift_causal.evaluate_uplift import honest_optimum, uplift_band, uplift_oob  # noqa: E402
 from uplift_causal.plots import LAYOUT, MUTED, SERIES  # noqa: E402
 
 st.set_page_config(page_title="Uplift budget calculator", layout="wide")
@@ -24,6 +24,12 @@ def load(name):
 def band(name, model):
     df = load(name)
     return uplift_band(df.y.to_numpy(), df.t.to_numpy(), df[model].to_numpy())
+
+
+@st.cache_data
+def bags(name, model):
+    df = load(name)
+    return uplift_oob(df.y.to_numpy(), df.t.to_numpy(), df[model].to_numpy())
 
 
 datasets = sorted(p.stem.removeprefix("scores_") for p in APP.glob("scores_*.parquet"))
@@ -47,6 +53,8 @@ def profit(u):
 p, p_lo, p_hi = profit(est), profit(lo), profit(hi)
 feasible = contacts * cost <= budget
 i = int(np.argmax(np.where(feasible, p, -np.inf)))
+max_share = budget / (cost * customers) if cost > 0 else 1.0
+check = honest_optimum(*bags(name, model), value, cost, max_share)
 
 st.title("Whom should we contact?")
 st.caption(
@@ -60,6 +68,16 @@ c[1].metric("Contacts", f"{contacts[i]:,.0f}")
 c[2].metric("Incremental visits", f"{est[i] * customers:,.0f}", f"95 % CI {lo[i] * customers:,.0f}–{hi[i] * customers:,.0f}", delta_color="off")
 c[3].metric("Spend", f"€{contacts[i] * cost:,.0f}")
 c[4].metric("Profit", f"€{p[i]:,.0f}", f"€{p[i] - p[-1]:+,.0f} vs. contacting all")
+
+c = st.columns(3)
+c[0].metric("Profit after selection correction", f"€{check['honest'] * customers:,.0f}")
+c[1].metric("Selection optimism", f"€{(check['naive'] - check['honest']) * customers:,.0f}")
+c[2].metric("Optimal share, 95 % range", f"{check['share'][0]:.0%}–{check['share'][2]:.0%}")
+st.caption(
+    "The target share is the maximum of an estimated curve, so its profit is biased upwards. "
+    "The corrected value picks the share on each bootstrap sample and scores it on the "
+    "customers left out of that sample."
+)
 
 if est[-1] > 0:
     st.markdown(

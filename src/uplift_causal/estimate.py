@@ -2,7 +2,10 @@ import numpy as np
 import pandas as pd
 from dowhy import CausalModel
 from lightgbm import LGBMClassifier
+from scipy import stats
+from sklearn.model_selection import StratifiedKFold
 
+from .evaluate_uplift import diff_means
 from .learners import lgbm
 
 REFUTERS = ("random_common_cause", "placebo_treatment_refuter", "data_subset_refuter")
@@ -55,6 +58,30 @@ def summarize(estimates):
     for name, e in estimates.items():
         ci = np.ravel(e.get_confidence_intervals())
         rows[name] = (float(np.ravel(e.value)[0]), ci[0], ci[-1])
+    return pd.DataFrame.from_dict(rows, orient="index", columns=["est", "lo", "hi"])
+
+
+def aipw(df, cv=3, seed=0, clip=0.01, alpha=0.05, n_estimators=100):
+    X, t, y = df.drop(columns=["t", "y"]), df.t.to_numpy(), df.y.to_numpy(dtype=float)
+    e, mu = np.empty(len(df)), np.empty((2, len(df)))
+    for train, test in StratifiedKFold(cv, shuffle=True, random_state=seed).split(X, t):
+        model = lgbm(LGBMClassifier, seed=seed, n_estimators=n_estimators).fit(X.iloc[train], t[train])
+        e[test] = model.predict_proba(X.iloc[test])[:, 1]
+        for arm in (0, 1):
+            idx = train[t[train] == arm]
+            model = lgbm(seed=seed, n_estimators=n_estimators).fit(X.iloc[idx], y[idx])
+            mu[arm, test] = model.predict(X.iloc[test])
+    e = np.clip(e, clip, 1 - clip)
+    psi = mu[1] - mu[0] + t * (y - mu[1]) / e - (1 - t) * (y - mu[0]) / (1 - e)
+    est, se = psi.mean(), psi.std(ddof=1) / np.sqrt(len(psi))
+    z = stats.norm.ppf(1 - alpha / 2)
+    return est, est - z * se, est + z * se
+
+
+def compare(df, n_boot=100, seed=0):
+    rows = {"Naive": diff_means(df.y, df.t)}
+    rows |= {k: tuple(v) for k, v in summarize(fit_estimators(df, n_boot, seed)).iterrows()}
+    rows["AIPW"] = aipw(df, seed=seed)
     return pd.DataFrame.from_dict(rows, orient="index", columns=["est", "lo", "hi"])
 
 

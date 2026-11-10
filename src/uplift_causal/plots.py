@@ -134,3 +134,67 @@ def quadrant_plot(mu0, tau, seg, threshold, delta, n=5000, seed=0):
         yaxis_tickformat="+.0%",
     )
     return fig
+
+
+def montecarlo_plot(runs, truth):
+    scenarios = list(dict.fromkeys(runs.scenario))
+    fig = go.Figure()
+    for i, sc in enumerate(scenarios, 1):
+        part, ax = runs[runs.scenario == sc], "" if i == 1 else str(i)
+        fig.add_trace(
+            go.Box(
+                x=part.est,
+                y=part.estimator,
+                orientation="h",
+                boxpoints=False,
+                line=dict(color=SERIES[i - 1], width=1.5),
+                fillcolor="rgba(0,0,0,0)",
+                name=sc,
+                xaxis=f"x{ax}",
+                yaxis=f"y{ax}",
+                hoverinfo="x",
+            )
+        )
+        fig.add_shape(
+            type="line", x0=truth, x1=truth, y0=0, y1=1, xref=f"x{ax}", yref=f"y{ax} domain",
+            line=dict(dash="dash", color=MUTED, width=2),
+        )
+    width = 1 / len(scenarios)
+    axes = {}
+    for i, sc in enumerate(scenarios, 1):
+        suffix = "" if i == 1 else str(i)
+        axes[f"xaxis{suffix}"] = dict(
+            domain=[(i - 1) * width + 0.03, i * width - 0.01], tickformat=".0%", anchor=f"y{suffix}",
+            title=f"{sc} propensity",
+        )
+        axes[f"yaxis{suffix}"] = dict(autorange="reversed", anchor=f"x{suffix}", showticklabels=i == 1)
+    fig.update_layout(
+        **LAYOUT, **axes, showlegend=False,
+        title="Estimates over repeated confounded samples (dashed: true effect)",
+    )
+    return fig
+
+
+def gates_plot(table, ate, title="Uplift by predicted-effect quintile (held out)"):
+    fig = go.Figure(
+        go.Bar(
+            x=[str(i) for i in table.index],
+            y=table.uplift,
+            marker_color=SERIES[0],
+            error_y=dict(
+                type="data", array=table.hi - table.uplift, arrayminus=table.uplift - table.lo,
+                color=MUTED, thickness=2, width=0,
+            ),
+            hovertemplate="group %{x}: %{y:+.1%}<extra></extra>",
+        )
+    )
+    fig.add_hline(
+        y=ate, line=dict(dash="dash", color=MUTED, width=2),
+        annotation_text="average effect", annotation_font_color=MUTED,
+        annotation_position="top left",
+    )
+    fig.update_layout(
+        **LAYOUT, title=title, showlegend=False, yaxis_tickformat="+.0%",
+        xaxis_title="Quintile of predicted effect (1 = lowest)", yaxis_title="Measured uplift",
+    )
+    return fig

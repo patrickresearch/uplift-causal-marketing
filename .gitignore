@@ -4,7 +4,6 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 data/
-CLAUDE.md
 ROADMAP.md
-.claude/
+OPTIMIZATION.md
 *-out/
